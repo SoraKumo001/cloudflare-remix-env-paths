@@ -24,7 +24,7 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./app/*"],
-      "#/Test": ["./app/libs/Test01"]
+      "#prisma": ["./app/prisma/prod"]
     },
 
     // Vite takes care of building everything, not tsc.

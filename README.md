@@ -2,26 +2,52 @@
 
 Sample of switching import between Production and Development
 
+- app/prisma/dev/index.ts
+
+```ts
+export * from "@prisma/adapter-pg";
+import pg from "pg";
+export const Pool = pg.Pool;
+```
+
+- app/prisma/prod/index.ts
+
+```ts
+export * from "@prisma/adapter-pg";
+import pg from "pg";
+export const Pool = pg.Pool;
+```
+
 - app/routes/\_index.tsx
 
 ```tsx
-import { Test } from "#/Test";
+import { LoaderFunctionArgs } from "@remix-run/cloudflare";
+import { Pool, PrismaPg } from "#prisma";
+import { PrismaClient } from "@prisma/client";
+import { useLoaderData } from "@remix-run/react";
 
 export default function Index() {
-  return <Test />;
+  const values = useLoaderData<string[]>();
+  return (
+    <div>
+      {values.map((v) => (
+        <div key={v}>{v}</div>
+      ))}
+    </div>
+  );
 }
-```
 
-- app/libs/Test01.tsx
-
-```tsx
-export const Test = () => <>Production</>;
-```
-
-- app/libs/Test02.tsx
-
-```tsx
-export const Test = () => <>Development</>;
+export async function loader({
+  context,
+}: LoaderFunctionArgs): Promise<string[]> {
+  const pool = new Pool({
+    connectionString: context.cloudflare.env.DATABASE_URL,
+  });
+  const adapter = new PrismaPg(pool);
+  const prisma = new PrismaClient({ adapter });
+  await prisma.test.create({ data: {} });
+  return prisma.test.findMany().then((r) => r.map(({ id }) => id));
+}
 ```
 
 - tsconfig.json
@@ -53,7 +79,7 @@ export const Test = () => <>Development</>;
       "baseUrl": ".",
       "paths": {
         "~/*": ["./app/*"],
-        "#/Test": ["./app/libs/Test01"]
+        "#prisma": ["./app/prisma/prod"]
       },
 
       // Vite takes care of building everything, not tsc.
@@ -69,7 +95,7 @@ export const Test = () => <>Development</>;
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "#/Test": ["./app/libs/Test02"]
+      "#prisma": ["./app/prisma/dev"]
     }
   }
 }

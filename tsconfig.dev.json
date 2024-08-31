@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "#/Test": ["./app/libs/Test02"]
+      "#prisma": ["./app/prisma/dev"]
     }
   }
 }
