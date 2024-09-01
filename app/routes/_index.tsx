@@ -1,5 +1,5 @@
 import { LoaderFunctionArgs } from "@remix-run/cloudflare";
-import { Pool, PrismaPg } from "#prisma";
+import { Pool, PrismaPg } from "~/prisma";
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 

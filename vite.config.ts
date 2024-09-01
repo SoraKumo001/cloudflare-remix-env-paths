@@ -4,8 +4,17 @@ import {
 } from "@remix-run/dev";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import path from "path";
 
 export default defineConfig({
+  resolve: {
+    alias:
+      process.env.NODE_ENV === "development"
+        ? {
+            "~/prisma": path.resolve(__dirname, "./app/prisma/index.dev"),
+          }
+        : undefined,
+  },
   plugins: [
     remixCloudflareDevProxy(),
     remix({
@@ -15,12 +24,6 @@ export default defineConfig({
         v3_throwAbortReason: true,
       },
     }),
-    // Switch tsconfig.js here
-    tsconfigPaths({
-      configNames:
-        process.env.NODE_ENV === "production"
-          ? ["tsconfig.json"]
-          : ["tsconfig.dev.json"],
-    }),
+    tsconfigPaths(),
   ],
 });

@@ -2,15 +2,15 @@
 
 Sample of switching import between Production and Development
 
-- app/prisma/dev/index.ts
+- app/prisma/index.ts
 
 ```ts
-export * from "@prisma/adapter-pg";
-import pg from "pg";
+export * from "@prisma/adapter-pg-worker";
+import pg from "@prisma/pg-worker";
 export const Pool = pg.Pool;
 ```
 
-- app/prisma/prod/index.ts
+- app/prisma/index.dev.ts
 
 ```ts
 export * from "@prisma/adapter-pg";
@@ -22,7 +22,7 @@ export const Pool = pg.Pool;
 
 ```tsx
 import { LoaderFunctionArgs } from "@remix-run/cloudflare";
-import { Pool, PrismaPg } from "#prisma";
+import { Pool, PrismaPg } from "~/prisma";
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 
@@ -50,57 +50,6 @@ export async function loader({
 }
 ```
 
-- tsconfig.json
-
-  ```json
-  {
-    "include": [
-      "**/*.ts",
-      "**/*.tsx",
-      "**/.server/**/*.ts",
-      "**/.server/**/*.tsx",
-      "**/.client/**/*.ts",
-      "**/.client/**/*.tsx"
-    ],
-    "compilerOptions": {
-      "lib": ["DOM", "DOM.Iterable", "ES2022"],
-      "types": ["@remix-run/cloudflare", "vite/client"],
-      "isolatedModules": true,
-      "esModuleInterop": true,
-      "jsx": "react-jsx",
-      "module": "ESNext",
-      "moduleResolution": "Bundler",
-      "resolveJsonModule": true,
-      "target": "ES2022",
-      "strict": true,
-      "allowJs": true,
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
-      "baseUrl": ".",
-      "paths": {
-        "~/*": ["./app/*"],
-        "#prisma": ["./app/prisma/prod"]
-      },
-
-      // Vite takes care of building everything, not tsc.
-      "noEmit": true
-    }
-  }
-  ```
-
-- tsconfig.dev.json
-
-```json
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "#prisma": ["./app/prisma/dev"]
-    }
-  }
-}
-```
-
 - vite.config.ts
 
 ```ts
@@ -110,8 +59,17 @@ import {
 } from "@remix-run/dev";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import path from "path";
 
 export default defineConfig({
+  resolve: {
+    alias:
+      process.env.NODE_ENV === "development"
+        ? {
+            "~/prisma": path.resolve(__dirname, "./app/prisma/index.dev"),
+          }
+        : undefined,
+  },
   plugins: [
     remixCloudflareDevProxy(),
     remix({
@@ -121,13 +79,7 @@ export default defineConfig({
         v3_throwAbortReason: true,
       },
     }),
-    // Switch tsconfig.js here
-    tsconfigPaths({
-      configNames:
-        process.env.NODE_ENV === "production"
-          ? ["tsconfig.json"]
-          : ["tsconfig.dev.json"],
-    }),
+    tsconfigPaths(),
   ],
 });
 ```
