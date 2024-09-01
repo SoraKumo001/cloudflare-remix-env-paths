@@ -17,10 +17,12 @@ export default function Index() {
 export async function loader({
   context,
 }: LoaderFunctionArgs): Promise<string[]> {
+  const url = new URL(context.cloudflare.env.DATABASE_URL);
+  const schema = url.searchParams.get("schema") ?? undefined;
   const pool = new Pool({
     connectionString: context.cloudflare.env.DATABASE_URL,
   });
-  const adapter = new PrismaPg(pool);
+  const adapter = new PrismaPg(pool, { schema });
   const prisma = new PrismaClient({ adapter });
   await prisma.test.create({ data: {} });
   return prisma.test.findMany().then((r) => r.map(({ id }) => id));
